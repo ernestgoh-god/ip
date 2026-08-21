@@ -1,6 +1,6 @@
-# Duke User Guide
+# Neo User Guide
 
-// Update the title above to match the actual product name
+Neo is a chatbot application.
 
 // Product screenshot goes here
 
