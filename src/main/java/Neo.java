@@ -50,6 +50,17 @@ public class Neo {
                 System.out.println("       [X] " + tasks[taskIndex]);
                 System.out.println(separator);
                 System.out.println();
+            } else if (userInput.startsWith("unmark ")) {
+                int taskNumber = Integer.parseInt(userInput.substring(7));
+                int taskIndex = taskNumber - 1;
+
+                isDone[taskIndex] = false;
+
+                System.out.println(separator);
+                System.out.println("     OK, I've marked this task as not done yet:");
+                System.out.println("       [ ] " + tasks[taskIndex]);
+                System.out.println(separator);
+                System.out.println();
             } else {
                 tasks[taskCount] = userInput;
                 isDone[taskCount] = false;
