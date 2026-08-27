@@ -21,8 +21,7 @@ public class Neo {
 
         Scanner scanner = new Scanner(System.in);
 
-        String[] tasks = new String[100];
-        boolean[] isDone = new boolean[100];
+        Task[] tasks = new Task[100];
         int taskCount = 0;
 
         while (true) {
@@ -34,8 +33,7 @@ public class Neo {
                 System.out.println(separator);
                 System.out.println("     Here are the tasks in your list:");
                 for (int i = 0; i < taskCount; i++) {
-                    String status = isDone[i] ? "X" : " ";
-                    System.out.println("     " + (i + 1) + ".[" + status + "] " + tasks[i]);
+                    System.out.println("     " + (i + 1) + "." + tasks[i].toString());
                 }
                 System.out.println(separator);
                 System.out.println();
@@ -43,27 +41,26 @@ public class Neo {
                 int taskNumber = Integer.parseInt(userInput.substring(5));
                 int taskIndex = taskNumber - 1;
 
-                isDone[taskIndex] = true;
+                tasks[taskIndex].markAsDone();
 
                 System.out.println(separator);
                 System.out.println("     Nice! I've marked this task as done:");
-                System.out.println("       [X] " + tasks[taskIndex]);
+                System.out.println("       " + tasks[taskIndex]);
                 System.out.println(separator);
                 System.out.println();
             } else if (userInput.startsWith("unmark ")) {
                 int taskNumber = Integer.parseInt(userInput.substring(7));
                 int taskIndex = taskNumber - 1;
 
-                isDone[taskIndex] = false;
+                tasks[taskIndex].unmarkAsDone();
 
                 System.out.println(separator);
                 System.out.println("     OK, I've marked this task as not done yet:");
-                System.out.println("       [ ] " + tasks[taskIndex]);
+                System.out.println("       " + tasks[taskIndex].toString());
                 System.out.println(separator);
                 System.out.println();
             } else {
-                tasks[taskCount] = userInput;
-                isDone[taskCount] = false;
+                tasks[taskCount] = new Task(userInput);
                 taskCount++;
 
                 System.out.println(separator);
