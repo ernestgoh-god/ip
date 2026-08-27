@@ -1,9 +1,14 @@
+package neo;
+
 import java.util.Scanner;
 
-/**
- * Starts the Neo chatbot application.
- */
+/** Starts the Neo chatbot application. */
 public class Neo {
+    /**
+     * Starts the chatbot, reads commands from standard input, and displays responses.
+     *
+     * @param args Command-line arguments, which are not used.
+     */
     public static void main(String[] args) {
         String banner = " _   _            \n"
                 + "| \\ | | ___  ___ \n"
@@ -33,7 +38,7 @@ public class Neo {
                 System.out.println(separator);
                 System.out.println("     Here are the tasks in your list:");
                 for (int i = 0; i < taskCount; i++) {
-                    System.out.println("     " + (i + 1) + "." + tasks[i].toString());
+                    System.out.println("     " + (i + 1) + "." + tasks[i]);
                 }
                 System.out.println(separator);
                 System.out.println();
@@ -56,7 +61,7 @@ public class Neo {
 
                 System.out.println(separator);
                 System.out.println("     OK, I've marked this task as not done yet:");
-                System.out.println("       " + tasks[taskIndex].toString());
+                System.out.println("       " + tasks[taskIndex]);
                 System.out.println(separator);
                 System.out.println();
             } else {
