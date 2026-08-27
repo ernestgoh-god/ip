@@ -21,21 +21,36 @@ public class Neo {
 
         Scanner scanner = new Scanner(System.in);
 
+        String[] tasks = new String[100];
+        int taskCount = 0;
+
         while (true) {
             String userInput = scanner.nextLine();
+
             if (userInput.equals("bye")) {
                 break;
+            } else if (userInput.equals("list")) {
+                System.out.println(separator);
+                for (int i = 0; i < taskCount; i++) {
+                    System.out.println("     " + (i + 1) + ". " + tasks[i]);
+                }
+                System.out.println(separator);
+                System.out.println();
+            } else {
+                tasks[taskCount] = userInput;
+                taskCount++;
+
+                System.out.println(separator);
+                System.out.println("     added: " + userInput);
+                System.out.println(separator);
+                System.out.println();
             }
-            System.out.println(separator);
-            System.out.println("     " + userInput);
-            System.out.println(separator);
-            System.out.println();
         }
 
         System.out.println(separator);
         System.out.println("     Bye. Hope to see you again soon!");
         System.out.println(separator);
-        
+
         scanner.close();
     }
 }
