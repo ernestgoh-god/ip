@@ -67,7 +67,7 @@ public class Neo {
             } else if (userInput.startsWith("todo ")) {
                 String description = userInput.substring(5);
 
-                tasks[taskCount] = new Task(description);
+                tasks[taskCount] = new Todo(description);
                 taskCount++;
 
                 System.out.println(SEPARATOR);
@@ -83,7 +83,7 @@ public class Neo {
                 String description = parts[0];
                 String by = parts[1];
 
-                tasks[taskCount] = new Task(description + " (by: " + by + ")");
+                tasks[taskCount] = new Deadline(description, by);
                 taskCount++;
 
                 System.out.println(SEPARATOR);
@@ -102,7 +102,7 @@ public class Neo {
                 String from = toSplit[0];
                 String to = toSplit[1];
 
-                tasks[taskCount] = new Task(description + " (from: " + from + " to: " + to + ")");
+                tasks[taskCount] = new Event(description, from, to);
                 taskCount++;
 
                 System.out.println(SEPARATOR);

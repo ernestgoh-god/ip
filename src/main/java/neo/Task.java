@@ -40,6 +40,6 @@ public class Task {
     @Override
     public String toString() {
         String statusIcon = isDone ? "[X]" : "[ ]";
-        return "[T]" + statusIcon + " " + description;
+        return statusIcon + " " + description;
     }
 }
