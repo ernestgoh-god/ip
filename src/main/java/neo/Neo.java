@@ -92,6 +92,25 @@ public class Neo {
                 System.out.println("     Now you have " + taskCount + " tasks in the list.");
                 System.out.println(SEPARATOR);
                 System.out.println();
+            } else if (userInput.startsWith("event ")) {
+                String payload = userInput.substring(6);
+
+                String[] fromSplit = payload.split(" /from ");
+                String description = fromSplit[0];
+
+                String[] toSplit = fromSplit[1].split(" /to ");
+                String from = toSplit[0];
+                String to = toSplit[1];
+
+                tasks[taskCount] = new Task(description + " (from: " + from + " to: " + to + ")");
+                taskCount++;
+
+                System.out.println(SEPARATOR);
+                System.out.println("     Got it. I've added this task:");
+                System.out.println("     " + tasks[taskCount - 1].toString());
+                System.out.println("     Now you have " + taskCount + " tasks in the list.");
+                System.out.println(SEPARATOR);
+                System.out.println();
             } else {
                 tasks[taskCount] = new Task(userInput);
                 taskCount++;
