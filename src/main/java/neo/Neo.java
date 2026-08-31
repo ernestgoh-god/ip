@@ -76,6 +76,22 @@ public class Neo {
                 System.out.println("     Now you have " + taskCount + " tasks in the list.");
                 System.out.println(SEPARATOR);
                 System.out.println();
+            } else if (userInput.startsWith("deadline ")) {
+                String payload = userInput.substring(9);
+
+                String[] parts = payload.split(" /by ");
+                String description = parts[0];
+                String by = parts[1];
+
+                tasks[taskCount] = new Task(description + " (by: " + by + ")");
+                taskCount++;
+
+                System.out.println(SEPARATOR);
+                System.out.println("     Got it. I've added this task:");
+                System.out.println("     " + tasks[taskCount - 1].toString());
+                System.out.println("     Now you have " + taskCount + " tasks in the list.");
+                System.out.println(SEPARATOR);
+                System.out.println();
             } else {
                 tasks[taskCount] = new Task(userInput);
                 taskCount++;
