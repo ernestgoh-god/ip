@@ -64,6 +64,18 @@ public class Neo {
                 System.out.println("       " + tasks[taskIndex]);
                 System.out.println(SEPARATOR);
                 System.out.println();
+            } else if (userInput.startsWith("todo ")) {
+                String description = userInput.substring(5);
+
+                tasks[taskCount] = new Task(description);
+                taskCount++;
+
+                System.out.println(SEPARATOR);
+                System.out.println("     Got it. I've added this task:");
+                System.out.println("     " + tasks[taskCount - 1].toString());
+                System.out.println("     Now you have " + taskCount + " tasks in the list.");
+                System.out.println(SEPARATOR);
+                System.out.println();
             } else {
                 tasks[taskCount] = new Task(userInput);
                 taskCount++;
