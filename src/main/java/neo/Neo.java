@@ -48,29 +48,40 @@ public class Neo {
                 return;
             }
 
-            taskCount = processUserInput(userInput, tasks, taskCount);
+            try {
+                taskCount = processUserInput(userInput, tasks, taskCount);
+            } catch (NeoException e) {
+                System.out.println(SEPARATOR);
+                System.out.println("     Error: " + e.getMessage());
+                System.out.println(SEPARATOR);
+                System.out.println();
+            }
         }
     }
 
     /** Processes one non-exit command and returns the updated task count. */
-    private static int processUserInput(String userInput, Task[] tasks, int taskCount) {
+    private static int processUserInput(String userInput, Task[] tasks, int taskCount) throws NeoException {
         if (userInput.equals(LIST_COMMAND)) {
             printTaskList(tasks, taskCount);
             return taskCount;
         }
 
         if (userInput.startsWith(MARK_PREFIX)) {
-            markTask(userInput, tasks);
+            markTask(userInput, tasks, taskCount);
             return taskCount;
         }
 
         if (userInput.startsWith(UNMARK_PREFIX)) {
-            unmarkTask(userInput, tasks);
+            unmarkTask(userInput, tasks, taskCount);
             return taskCount;
         }
 
         if (userInput.startsWith(TODO_PREFIX)) {
-            return addDetailedTask(new Todo(userInput.substring(TODO_PREFIX.length())), tasks, taskCount);
+            String description = userInput.substring(TODO_PREFIX.length()).trim();
+            if (description.isEmpty()) {
+                throw new NeoException("The todo description is empty. Try typing: todo <description>.");
+            }
+            return addDetailedTask(new Todo(description), tasks, taskCount);
         }
 
         if (userInput.startsWith(DEADLINE_PREFIX)) {
@@ -81,7 +92,7 @@ public class Neo {
             return addDetailedTask(createEvent(userInput), tasks, taskCount);
         }
 
-        return addPlainTask(userInput, tasks, taskCount);
+        throw new NeoException("Unrecognized command. Try typing: todo <description>, deadline <description> <date>, event <description> <date>, list, mark <index>, unmark <index>, or bye.");
     }
 
     /** Prints Neo's initial greeting. */
@@ -106,8 +117,8 @@ public class Neo {
     }
 
     /** Marks the task identified by a mark command as done. */
-    private static void markTask(String userInput, Task[] tasks) {
-        int taskIndex = getTaskIndex(userInput, MARK_PREFIX);
+    private static void markTask(String userInput, Task[] tasks, int taskCount) throws NeoException {
+        int taskIndex = getTaskIndex(userInput, MARK_PREFIX, taskCount);
         tasks[taskIndex].markAsDone();
 
         System.out.println(SEPARATOR);
@@ -118,8 +129,8 @@ public class Neo {
     }
 
     /** Marks the task identified by an unmark command as not done. */
-    private static void unmarkTask(String userInput, Task[] tasks) {
-        int taskIndex = getTaskIndex(userInput, UNMARK_PREFIX);
+    private static void unmarkTask(String userInput, Task[] tasks, int taskCount) throws NeoException {
+        int taskIndex = getTaskIndex(userInput, UNMARK_PREFIX, taskCount);
         tasks[taskIndex].unmarkAsDone();
 
         System.out.println(SEPARATOR);
@@ -130,22 +141,51 @@ public class Neo {
     }
 
     /** Returns the zero-based task index contained in a numbered command. */
-    private static int getTaskIndex(String userInput, String commandPrefix) {
-        return Integer.parseInt(userInput.substring(commandPrefix.length())) - 1;
+    private static int getTaskIndex(String userInput, String commandPrefix, int taskCount) throws NeoException {
+        String indexString = userInput.substring(commandPrefix.length()).trim();
+        if (indexString.isEmpty()) {
+            throw new NeoException("The task index is missing. Try typing: " + commandPrefix.trim() + " <index>.");
+        }
+
+        try {
+            int taskIndex = Integer.parseInt(indexString) - 1;
+            if (taskIndex < 0 || taskIndex >= taskCount) {
+                throw new NeoException("The task index is out of bounds.");
+            }
+            return taskIndex;
+        } catch (NumberFormatException e) {
+            throw new NeoException("The task index is not a valid number.");
+        }
     }
 
     /** Creates a deadline task from a deadline command. */
-    private static Deadline createDeadline(String userInput) {
-        String payload = userInput.substring(DEADLINE_PREFIX.length());
+    private static Deadline createDeadline(String userInput) throws NeoException {
+        String payload = userInput.substring(DEADLINE_PREFIX.length()).trim();
+        if (payload.isEmpty()) {
+            throw new NeoException("The deadline description is missing. Try typing: " + DEADLINE_PREFIX.trim() + " <description> /by <date>");
+        }
         String[] parts = payload.split(DEADLINE_DELIMITER);
+        if (parts.length < 2) {
+            throw new NeoException("The deadline date is missing. Try typing: " + DEADLINE_PREFIX.trim() + " <description> /by <date>");
+        }
+
         return new Deadline(parts[0], parts[1]);
     }
 
     /** Creates an event task from an event command. */
-    private static Event createEvent(String userInput) {
-        String payload = userInput.substring(EVENT_PREFIX.length());
+    private static Event createEvent(String userInput) throws NeoException {
+        String payload = userInput.substring(EVENT_PREFIX.length()).trim();
+        if (payload.isEmpty()) {
+            throw new NeoException("The event description is missing. Try typing: " + EVENT_PREFIX.trim() + " <description> /from <start date> /to <end date>");
+        }
         String[] fromSplit = payload.split(EVENT_FROM_DELIMITER);
+        if (fromSplit.length < 2) {
+            throw new NeoException("The event start date is missing. Try typing: " + EVENT_PREFIX.trim() + " <description> /from <start date> /to <end date>");
+        }
         String[] toSplit = fromSplit[1].split(EVENT_TO_DELIMITER);
+        if (toSplit.length < 2) {
+            throw new NeoException("The event end date is missing. Try typing: " + EVENT_PREFIX.trim() + " <description> /from <start date> /to <end date>");
+        }
         return new Event(fromSplit[0], toSplit[0], toSplit[1]);
     }
 
@@ -161,17 +201,6 @@ public class Neo {
         System.out.println(SEPARATOR);
         System.out.println();
         return newTaskCount;
-    }
-
-    /** Stores and reports a task created without a task-type command. */
-    private static int addPlainTask(String description, Task[] tasks, int taskCount) {
-        tasks[taskCount] = new Task(description);
-
-        System.out.println(SEPARATOR);
-        System.out.println("     added: " + description);
-        System.out.println(SEPARATOR);
-        System.out.println();
-        return taskCount + 1;
     }
 
     /** Prints Neo's farewell message. */
