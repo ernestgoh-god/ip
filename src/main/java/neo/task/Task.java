@@ -1,4 +1,4 @@
-package neo;
+package neo.task;
 
 /** Represents a task in Neo's task list. */
 public class Task {

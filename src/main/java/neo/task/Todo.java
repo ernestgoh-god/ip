@@ -1,4 +1,4 @@
-package neo;
+package neo.task;
 
 /** Represents a todo task without a specific date or time attached. */
 public class Todo extends Task {

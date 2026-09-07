@@ -2,6 +2,12 @@ package neo;
 
 import java.util.Scanner;
 
+import neo.exception.NeoException;
+import neo.task.Deadline;
+import neo.task.Event;
+import neo.task.Task;
+import neo.task.Todo;
+
 /** Starts the Neo chatbot application. */
 public class Neo {
     private static final String BANNER = " _   _\n"
