@@ -19,6 +19,9 @@ bin/
 # Data files
 data/
 
+# JAR files
+*.jar
+
 # Temp files
 _temp/
 
