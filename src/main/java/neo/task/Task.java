@@ -37,8 +37,14 @@ public class Task {
         return (isDone ? "X" : " ");
     }
 
+    /** Returns a string representation of this task for display. */
     @Override
     public String toString() {
         return "[" + getStatus() + "] " + description;
+    }
+
+    /** Returns a string representation of this task for saving to a file. */
+    public String toSaveFormat() {
+        return (isDone ? "1" : "0") + " | " + description;
     }
 }

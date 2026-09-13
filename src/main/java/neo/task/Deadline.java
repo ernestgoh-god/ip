@@ -16,8 +16,15 @@ public class Deadline extends Task {
         this.by = by;
     }
 
+    /** Returns a string representation of this deadline task for display. */
     @Override
     public String toString() {
         return "[D]" + super.toString() + " (by: " + by + ")";
+    }
+
+    /** Returns a string representation of this deadline task for saving to a file. */
+    @Override
+    public String toSaveFormat() {
+        return "D | " + super.toSaveFormat() + " | " + by;
     }
 }

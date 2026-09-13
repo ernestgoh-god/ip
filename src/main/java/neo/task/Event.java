@@ -21,8 +21,15 @@ public class Event extends Task {
         this.to = to;
     }
 
+    /** Returns a string representation of this event task for display. */
     @Override
     public String toString() {
         return "[E]" + super.toString() + " (from: " + from + " to: " + to + ")";
+    }
+
+    /** Returns a string representation of this event task for saving to a file. */
+    @Override
+    public String toSaveFormat() {
+        return "E | " + super.toSaveFormat() + " | " + from + " | " + to;
     }
 }

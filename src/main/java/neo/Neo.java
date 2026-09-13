@@ -1,12 +1,17 @@
 package neo;
 
 import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import neo.exception.NeoException;
 import neo.task.Deadline;
 import neo.task.Event;
 import neo.task.Task;
 import neo.task.Todo;
+
 
 /** Starts the Neo chatbot application. */
 public class Neo {
@@ -26,6 +31,7 @@ public class Neo {
     private static final String DEADLINE_DELIMITER = " /by ";
     private static final String EVENT_FROM_DELIMITER = " /from ";
     private static final String EVENT_TO_DELIMITER = " /to ";
+    private static final String FILE_PATH = "./data/neo.txt";
 
     /**
      * Starts the chatbot, reads commands from standard input, and displays responses.
@@ -34,28 +40,27 @@ public class Neo {
      */
     public static void main(String[] args) {
         printWelcomeMessage();
-
         Scanner scanner = new Scanner(System.in);
         Task[] tasks = new Task[100];
 
-        runChat(scanner, tasks);
+        int taskCount = loadTasks(tasks);
+
+        runChat(scanner, tasks, taskCount);
+
         printFarewellMessage();
         scanner.close();
     }
 
     /** Runs the command loop until the user requests to exit. */
-    private static void runChat(Scanner scanner, Task[] tasks) {
-        int taskCount = 0;
-
+    private static void runChat(Scanner scanner, Task[] tasks, int taskCount) {
         while (true) {
             String userInput = scanner.nextLine();
-
             if (userInput.equals(EXIT_COMMAND)) {
                 return;
             }
-
             try {
                 taskCount = processUserInput(userInput, tasks, taskCount);
+                saveTasks(tasks, taskCount);
             } catch (NeoException e) {
                 System.out.println(SEPARATOR);
                 System.out.println("     Error: " + e.getMessage());
@@ -196,7 +201,11 @@ public class Neo {
     }
 
     /** Stores and reports a task created with a todo, deadline, or event command. */
-    private static int addDetailedTask(Task task, Task[] tasks, int taskCount) {
+    private static int addDetailedTask(Task task, Task[] tasks, int taskCount) throws NeoException {
+        if (taskCount >= tasks.length) {
+            throw new NeoException("Your task list is full! You cannot add more than " + tasks.length + " tasks.");
+        }
+
         tasks[taskCount] = task;
         int newTaskCount = taskCount + 1;
 
@@ -214,5 +223,77 @@ public class Neo {
         System.out.println(SEPARATOR);
         System.out.println("     Bye. Hope to see you again soon!");
         System.out.println(SEPARATOR);
+    }
+
+    /** Saves the current task list to the hard drive. */
+    private static void saveTasks(Task[] tasks, int taskCount) {
+        try {
+            File file = new File(FILE_PATH);
+            file.getParentFile().mkdirs();
+            FileWriter writer = new FileWriter(file);
+
+            for (int i = 0; i < taskCount; i++) {
+                writer.write(tasks[i].toSaveFormat() + System.lineSeparator());
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
+        }
+    }
+
+    /** Loads tasks from the hard drive on startup. */
+    private static int loadTasks(Task[] tasks) {
+        int taskCount = 0;
+        File file = new File(FILE_PATH);
+        if (!file.exists()) {
+            return 0; 
+        }
+
+        try (Scanner fileScanner = new Scanner(file)) {
+            while (fileScanner.hasNextLine()) {
+                if (taskCount >= tasks.length) {
+                    System.out.println("Warning: Task limit of " + tasks.length + " reached. Remaining saved tasks were ignored.");
+                    break;
+                }
+
+                String line = fileScanner.nextLine().trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    String type = line.substring(0, 1);
+                    Task task = null;
+                    boolean isDone = false;
+
+                    if (type.equals("T")) {
+                        String[] parts = line.split(" \\| ", 3);
+                        task = new Todo(parts[2]);
+                        isDone = parts[1].equals("1");
+                    } else if (type.equals("D")) {
+                        String[] parts = line.split(" \\| ", 4);
+                        task = new Deadline(parts[2], parts[3]);
+                        isDone = parts[1].equals("1");
+                    } else if (type.equals("E")) {
+                        String[] parts = line.split(" \\| ", 5);
+                        task = new Event(parts[2], parts[3], parts[4]);
+                        isDone = parts[1].equals("1");
+                    }
+
+                    if (task != null) {
+                        if (isDone) {
+                            task.markAsDone();
+                        }
+                        tasks[taskCount] = task;
+                        taskCount++;
+                    }
+                } catch (Exception e) {
+                    System.out.println("Skipping corrupted data line: " + line);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Data file not found.");
+        }
+        return taskCount;
     }
 }
