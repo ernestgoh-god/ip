@@ -2,12 +2,17 @@ package neo;
 
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import neo.exception.NeoException;
 import neo.task.Deadline;
 import neo.task.Event;
 import neo.task.Task;
 import neo.task.Todo;
+
 
 /** Starts the Neo chatbot application. */
 public class Neo {
@@ -28,6 +33,7 @@ public class Neo {
     private static final String DEADLINE_DELIMITER = " /by ";
     private static final String EVENT_FROM_DELIMITER = " /from ";
     private static final String EVENT_TO_DELIMITER = " /to ";
+    private static final String FILE_PATH = "./data/neo.txt";
 
     /**
      * Starts the chatbot, reads commands from standard input, and displays responses.
@@ -36,11 +42,13 @@ public class Neo {
      */
     public static void main(String[] args) {
         printWelcomeMessage();
-
         Scanner scanner = new Scanner(System.in);
         ArrayList<Task> tasks = new ArrayList<>();
 
+        loadTasks(tasks);
+
         runChat(scanner, tasks);
+
         printFarewellMessage();
         scanner.close();
     }
@@ -49,13 +57,12 @@ public class Neo {
     private static void runChat(Scanner scanner, ArrayList<Task> tasks) {
         while (true) {
             String userInput = scanner.nextLine();
-
             if (userInput.equals(EXIT_COMMAND)) {
                 return;
             }
-
             try {
                 processUserInput(userInput, tasks);
+                saveTasks(tasks);
             } catch (NeoException e) {
                 System.out.println(SEPARATOR);
                 System.out.println("    Error: " + e.getMessage());
@@ -238,5 +245,68 @@ public class Neo {
         System.out.println(SEPARATOR);
         System.out.println("     Bye. Hope to see you again soon!");
         System.out.println(SEPARATOR);
+    }
+
+    /** Saves the current task list to the hard drive. */
+    private static void saveTasks(ArrayList<Task> tasks) {
+        try {
+            File file = new File(FILE_PATH);
+            file.getParentFile().mkdirs();
+            FileWriter writer = new FileWriter(file);
+            for (int i = 0; i < tasks.size(); i++) {
+                writer.write(tasks.get(i).toSaveFormat() + System.lineSeparator());
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
+        }
+    }
+
+    /** Loads tasks from the hard drive on startup. */
+    private static void loadTasks(ArrayList<Task> tasks) {
+        File file = new File(FILE_PATH);
+        if (!file.exists()) {
+            return; 
+        }
+
+        try (Scanner fileScanner = new Scanner(file)) {
+            while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine().trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    String type = line.substring(0, 1);
+                    Task task = null;
+                    boolean isDone = false;
+
+                    if (type.equals("T")) {
+                        String[] parts = line.split(" \\| ", 3);
+                        task = new Todo(parts[2]);
+                        isDone = parts[1].equals("1");
+                    } else if (type.equals("D")) {
+                        String[] parts = line.split(" \\| ", 4);
+                        task = new Deadline(parts[2], parts[3]);
+                        isDone = parts[1].equals("1");
+                    } else if (type.equals("E")) {
+                        String[] parts = line.split(" \\| ", 5);
+                        task = new Event(parts[2], parts[3], parts[4]);
+                        isDone = parts[1].equals("1");
+                    }
+
+                    if (task != null) {
+                        if (isDone) {
+                            task.markAsDone();
+                        }
+                        tasks.add(task);
+                    }
+                } catch (Exception e) {
+                    System.out.println("Skipping corrupted data line: " + line);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Data file not found.");
+        }
     }
 }

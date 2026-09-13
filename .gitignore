@@ -16,6 +16,9 @@ bin/
 # .class files
 *.class
 
+# Data files
+data/
+
 # Temp files
 _temp/
 
