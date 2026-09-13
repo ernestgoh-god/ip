@@ -1,6 +1,7 @@
 package neo;
 
 import java.util.Scanner;
+import java.util.ArrayList;
 
 import neo.exception.NeoException;
 import neo.task.Deadline;
@@ -23,6 +24,7 @@ public class Neo {
     private static final String TODO_PREFIX = "todo ";
     private static final String DEADLINE_PREFIX = "deadline ";
     private static final String EVENT_PREFIX = "event ";
+    private static final String DELETE_PREFIX = "delete ";
     private static final String DEADLINE_DELIMITER = " /by ";
     private static final String EVENT_FROM_DELIMITER = " /from ";
     private static final String EVENT_TO_DELIMITER = " /to ";
@@ -36,7 +38,7 @@ public class Neo {
         printWelcomeMessage();
 
         Scanner scanner = new Scanner(System.in);
-        Task[] tasks = new Task[100];
+        ArrayList<Task> tasks = new ArrayList<>();
 
         runChat(scanner, tasks);
         printFarewellMessage();
@@ -44,9 +46,7 @@ public class Neo {
     }
 
     /** Runs the command loop until the user requests to exit. */
-    private static void runChat(Scanner scanner, Task[] tasks) {
-        int taskCount = 0;
-
+    private static void runChat(Scanner scanner, ArrayList<Task> tasks) {
         while (true) {
             String userInput = scanner.nextLine();
 
@@ -55,10 +55,10 @@ public class Neo {
             }
 
             try {
-                taskCount = processUserInput(userInput, tasks, taskCount);
+                processUserInput(userInput, tasks);
             } catch (NeoException e) {
                 System.out.println(SEPARATOR);
-                System.out.println("     Error: " + e.getMessage());
+                System.out.println("    Error: " + e.getMessage());
                 System.out.println(SEPARATOR);
                 System.out.println();
             }
@@ -66,39 +66,48 @@ public class Neo {
     }
 
     /** Processes one non-exit command and returns the updated task count. */
-    private static int processUserInput(String userInput, Task[] tasks, int taskCount) throws NeoException {
+    private static void processUserInput(String userInput, ArrayList<Task> tasks) throws NeoException {
         if (userInput.equals(LIST_COMMAND)) {
-            printTaskList(tasks, taskCount);
-            return taskCount;
+            printTaskList(tasks);
+            return;
         }
 
         if (userInput.startsWith(MARK_PREFIX)) {
-            markTask(userInput, tasks, taskCount);
-            return taskCount;
+            markTask(userInput, tasks);
+            return;
         }
 
         if (userInput.startsWith(UNMARK_PREFIX)) {
-            unmarkTask(userInput, tasks, taskCount);
-            return taskCount;
+            unmarkTask(userInput, tasks);
+            return;
         }
 
         if (userInput.startsWith(TODO_PREFIX)) {
             String description = userInput.substring(TODO_PREFIX.length()).trim();
+
             if (description.isEmpty()) {
                 throw new NeoException("The todo description is empty. Try typing: todo <description>.");
             }
-            return addDetailedTask(new Todo(description), tasks, taskCount);
+            addDetailedTask(new Todo(description), tasks);
+            return;
         }
 
         if (userInput.startsWith(DEADLINE_PREFIX)) {
-            return addDetailedTask(createDeadline(userInput), tasks, taskCount);
+            addDetailedTask(createDeadline(userInput), tasks);
+            return;
         }
 
         if (userInput.startsWith(EVENT_PREFIX)) {
-            return addDetailedTask(createEvent(userInput), tasks, taskCount);
+            addDetailedTask(createEvent(userInput), tasks);
+            return;
         }
 
-        throw new NeoException("Unrecognized command. Try typing: todo <description>, deadline <description> <date>, event <description> <date>, list, mark <index>, unmark <index>, or bye.");
+        if (userInput.startsWith(DELETE_PREFIX)) {
+            deleteTask(userInput, tasks);
+            return;
+        }
+
+        throw new NeoException("Unrecognized command. Try typing: todo <description>, deadline <description> <date>, event <description> <date>, list, mark <index>, unmark <index>, delete <index> or bye.");
     }
 
     /** Prints Neo's initial greeting. */
@@ -112,42 +121,42 @@ public class Neo {
     }
 
     /** Prints every task currently stored in the task list. */
-    private static void printTaskList(Task[] tasks, int taskCount) {
+    private static void printTaskList(ArrayList<Task> tasks) {
         System.out.println(SEPARATOR);
         System.out.println("     Here are the tasks in your list:");
-        for (int i = 0; i < taskCount; i++) {
-            System.out.println("     " + (i + 1) + "." + tasks[i]);
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.println("     " + (i + 1) + "." + tasks.get(i));
         }
         System.out.println(SEPARATOR);
         System.out.println();
     }
 
     /** Marks the task identified by a mark command as done. */
-    private static void markTask(String userInput, Task[] tasks, int taskCount) throws NeoException {
-        int taskIndex = getTaskIndex(userInput, MARK_PREFIX, taskCount);
-        tasks[taskIndex].markAsDone();
+    private static void markTask(String userInput, ArrayList<Task> tasks) throws NeoException {
+        int taskIndex = getTaskIndex(userInput, MARK_PREFIX, tasks.size());
+        tasks.get(taskIndex).markAsDone();
 
         System.out.println(SEPARATOR);
         System.out.println("     Nice! I've marked this task as done:");
-        System.out.println("       " + tasks[taskIndex]);
+        System.out.println("       " + tasks.get(taskIndex));
         System.out.println(SEPARATOR);
         System.out.println();
     }
 
     /** Marks the task identified by an unmark command as not done. */
-    private static void unmarkTask(String userInput, Task[] tasks, int taskCount) throws NeoException {
-        int taskIndex = getTaskIndex(userInput, UNMARK_PREFIX, taskCount);
-        tasks[taskIndex].unmarkAsDone();
+    private static void unmarkTask(String userInput, ArrayList<Task> tasks) throws NeoException {
+        int taskIndex = getTaskIndex(userInput, UNMARK_PREFIX, tasks.size());
+        tasks.get(taskIndex).unmarkAsDone();
 
         System.out.println(SEPARATOR);
         System.out.println("     OK, I've marked this task as not done yet:");
-        System.out.println("       " + tasks[taskIndex]);
+        System.out.println("       " + tasks.get(taskIndex));
         System.out.println(SEPARATOR);
         System.out.println();
     }
 
     /** Returns the zero-based task index contained in a numbered command. */
-    private static int getTaskIndex(String userInput, String commandPrefix, int taskCount) throws NeoException {
+    private static int getTaskIndex(String userInput, String commandPrefix, int listSize) throws NeoException {
         String indexString = userInput.substring(commandPrefix.length()).trim();
         if (indexString.isEmpty()) {
             throw new NeoException("The task index is missing. Try typing: " + commandPrefix.trim() + " <index>.");
@@ -155,8 +164,8 @@ public class Neo {
 
         try {
             int taskIndex = Integer.parseInt(indexString) - 1;
-            if (taskIndex < 0 || taskIndex >= taskCount) {
-                throw new NeoException("The task index is out of bounds.");
+            if (taskIndex < 0 || taskIndex >= listSize) {
+                throw new NeoException("Task number " + (taskIndex + 1) + " does not exist. There are " + listSize + " tasks in the list.");
             }
             return taskIndex;
         } catch (NumberFormatException e) {
@@ -195,18 +204,33 @@ public class Neo {
         return new Event(fromSplit[0], toSplit[0], toSplit[1]);
     }
 
+    /** Deletes a task from the list. */
+    private static void deleteTask(String userInput, ArrayList<Task> tasks) throws NeoException {
+        if (tasks.isEmpty()) {
+            throw new NeoException("There are no tasks to delete.");
+        }
+
+        int taskIndex = getTaskIndex(userInput, DELETE_PREFIX, tasks.size());
+        Task removedTask = tasks.remove(taskIndex);
+
+        System.out.println(SEPARATOR);
+        System.out.println("     Noted. I've removed this task:");
+        System.out.println("       " + removedTask);
+        System.out.println("     Now you have " + tasks.size() + " tasks in the list.");
+        System.out.println(SEPARATOR);
+        System.out.println();
+    }
+
     /** Stores and reports a task created with a todo, deadline, or event command. */
-    private static int addDetailedTask(Task task, Task[] tasks, int taskCount) {
-        tasks[taskCount] = task;
-        int newTaskCount = taskCount + 1;
+    private static void addDetailedTask(Task task, ArrayList<Task> tasks) {
+        tasks.add(task);
 
         System.out.println(SEPARATOR);
         System.out.println("     Got it. I've added this task:");
         System.out.println("     " + task);
-        System.out.println("     Now you have " + newTaskCount + " tasks in the list.");
+        System.out.println("     Now you have " + tasks.size() + " tasks in the list.");
         System.out.println(SEPARATOR);
         System.out.println();
-        return newTaskCount;
     }
 
     /** Prints Neo's farewell message. */
