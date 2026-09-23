@@ -1,28 +1,39 @@
 package neo.task;
 
-/** Represents a task that needs to be done before a specific date/time. */
+/**
+ * Represents a task that needs to be completed before a specific date or time.
+ * Inherits from the base Task class and adds a deadline attribute.
+ */
 public class Deadline extends Task {
-    /** The deadline date/time for the task. */
+    /** The deadline date and time for the task. */
     private String by;
 
     /**
-     * Creates an incomplete deadline task with a description and a deadline time.
+     * Creates an incomplete deadline task with the specified description and deadline time.
      *
      * @param description Text that describes the task.
-     * @param by The date/time the task needs to be completed by.
+     * @param by The date and time the task needs to be completed by.
      */
     public Deadline(String description, String by) {
         super(description);
         this.by = by;
     }
 
-    /** Returns a string representation of this deadline task for display. */
+    /**
+     * Returns a string representation of this deadline task for UI display.
+     *
+     * @return A formatted string including the task type, status, description, and deadline.
+     */
     @Override
     public String toString() {
         return "[D]" + super.toString() + " (by: " + by + ")";
     }
 
-    /** Returns a string representation of this deadline task for saving to a file. */
+    /**
+     * Returns a string representation of this deadline task for saving to a persistent file.
+     *
+     * @return A formatted string separated by pipes for storage parsing.
+     */
     @Override
     public String toSaveFormat() {
         return "D | " + super.toSaveFormat() + " | " + by;
