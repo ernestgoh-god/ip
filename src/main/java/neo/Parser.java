@@ -19,6 +19,7 @@ public class Parser {
     public static final String DEADLINE_PREFIX = "deadline ";
     public static final String EVENT_PREFIX = "event ";
     public static final String DELETE_PREFIX = "delete ";
+    public static final String FIND_PREFIX = "find ";
     
     private static final String DEADLINE_DELIMITER = " /by ";
     private static final String EVENT_FROM_DELIMITER = " /from ";
@@ -122,5 +123,21 @@ public class Parser {
         }
         
         return new Event(fromSplit[0], toSplit[0], toSplit[1]);
+    }
+
+    /**
+     * Parses a find command to extract the search keyword.
+     *
+     * @param userInput The full string input provided by the user.
+     * @return The keyword to search for.
+     * @throws NeoException If the search keyword is missing.
+     */
+    public static String parseFind(String userInput) throws NeoException {
+        String keyword = userInput.substring(FIND_PREFIX.length()).trim();
+        if (keyword.isEmpty()) {
+            throw new NeoException("The search keyword is missing. "
+                    + "Try typing: " + FIND_PREFIX.trim() + " <keyword>");
+        }
+        return keyword;
     }
 }

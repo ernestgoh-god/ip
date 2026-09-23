@@ -113,4 +113,25 @@ public class Ui {
         System.out.println(SEPARATOR);
         System.out.println();
     }
+
+    /**
+     * Prints the list of tasks matching the user's search keyword.
+     *
+     * @param matchingTasks The list of tasks found.
+     */
+    public void showFoundTasks(ArrayList<Task> matchingTasks) {
+        System.out.println(SEPARATOR);
+        if (matchingTasks.isEmpty()) {
+            System.out.println("     No matching tasks found.");
+            System.out.println();
+            return;
+        } else  {
+            System.out.println("     Here are the matching tasks in your list:");
+            for (int i = 0; i < matchingTasks.size(); i++) {
+                System.out.println("     " + (i + 1) + "." + matchingTasks.get(i).toString());
+            }
+        }
+        System.out.println(SEPARATOR);
+        System.out.println();
+    }
 }
