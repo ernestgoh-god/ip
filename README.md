@@ -1,25 +1,83 @@
-# Neo project template
+```
+ _   _
+| \ | | ___  ___
+|  \| |/ _ \/ _ \
+| |\  |  __/ (_) |
+|_| \_|\___|\___/
+```
 
-This is a project template for a greenfield Java project. The chatbot is named _Neo_. Given below are instructions on how to use it.
+# Neo User Guide
 
-## Setting up in Intellij
+Neo is a fast, command-line-based task management assistant designed to help you keep track of your daily tasks, deadlines, and events efficiently.
 
-Prerequisites: JDK 25, update Intellij to the most recent version.
+## Quick Start
 
-1. Open Intellij (if you are not in the welcome screen, click `File` > `Close Project` to close the existing project first)
-1. Open the project into Intellij as follows:
-   1. Click `Open`.
-   1. Select the project directory, and click `OK`.
-   1. If there are any further prompts, accept the defaults.
-1. Configure the project to use **JDK 25** (not other versions) as explained in [here](https://www.jetbrains.com/help/idea/sdk.html#set-up-jdk).<br>
-   In the same dialog, set the **Project language level** field to the `SDK default` option.
-1. After that, locate the `src/main/java/neo/Neo.java` file, right-click it, and choose `Run Neo.main()` (if the code editor is showing compile errors, try restarting the IDE). If the setup is correct, you should see something like the below as the output:
-   ```
-    _   _
-   | \ | | ___  ___
-   |  \| |/ _ \/ _ \
-   | |\  |  __/ (_) |
-   |_| \_|\___|\___/
-   ```
+1. Ensure you have Java 17 or above installed on your computer.
+2. Download the latest `neo.jar` from the releases tab.
+3. Open a command terminal, navigate to the folder containing the jar file, and run the following command:
+   `java -jar neo.jar`
 
-**Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
+---
+
+## Features
+
+### 1. Adding a basic task: `todo`
+
+Adds a standard task with no specific date or time attached to it.
+
+- **Format:** `todo <task_description>`
+- **Example:** `todo read textbook chapter 3`
+
+### 2. Adding a deadline: `deadline`
+
+Adds a task that needs to be done before a specific date/time.
+
+- **Format:** `deadline <task_description> /by <date/time>`
+- **Example:** `deadline submit IP PR /by Sunday 2359`
+
+### 3. Adding an event: `event`
+
+Adds an event that starts and ends at a specific time.
+
+- **Format:** `event <event_name> /from <start_time> /to <end_time>`
+- **Example:** `event project meeting /from Monday 2pm /to 4pm`
+
+### 4. Listing all tasks: `list`
+
+Displays a fully indexed list of all the tasks currently in your task manager.
+
+- **Format:** `list`
+
+### 5. Searching for tasks: `find`
+
+Finds and lists all tasks that contain a specific keyword in their description.
+
+- **Format:** `find <keyword>`
+- **Example:** `find book`
+
+### 6. Marking a task as done: `mark`
+
+Marks a specific task in your list as completed.
+
+- **Format:** `mark <task_index>`
+- **Example:** `mark 2` (Marks the 2nd task in the list as done)
+
+### 7. Unmarking a task: `unmark`
+
+Marks a specific completed task as not done yet.
+
+- **Format:** `unmark <task_index>`
+- **Example:** `unmark 2`
+
+### 8. Deleting a task: `delete`
+
+Removes a task permanently from your list.
+
+- **Format:** `delete <task_index>`
+- **Example:** `delete 3` (Deletes the 3rd task in the list)
+
+### 9. Exiting the application: `bye`
+
+Saves your tasks and exits Neo.
+
+- **Format:** `bye`
