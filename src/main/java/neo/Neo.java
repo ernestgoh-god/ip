@@ -1,5 +1,7 @@
 package neo;
 
+import java.util.ArrayList;
+
 import neo.exception.NeoException;
 import neo.task.Task;
 
@@ -94,6 +96,13 @@ public class Neo {
             return false;
         }
 
+        if (command.startsWith(Parser.FIND_PREFIX)) {
+            String keyword = Parser.parseFind(command);
+            ArrayList<Task> matches = tasks.findTasks(keyword);
+            ui.showFoundTasks(matches);
+            return false;
+        }
+
         if (command.startsWith(Parser.TODO_PREFIX)) {
             Task t = Parser.parseTodo(command);
             tasks.addTask(t);
@@ -123,7 +132,7 @@ public class Neo {
 
         throw new NeoException("Unrecognized command. Try typing: todo <description>, "
                 + "deadline <description> <date>, event <description> <date>, list, "
-                + "mark <index>, unmark <index>, delete <index> or bye.");
+                + "mark <index>, unmark <index>, delete <index>, find <keyword> or bye.");
     }
 
     /**
