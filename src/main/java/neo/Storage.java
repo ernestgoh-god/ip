@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
-
 import neo.exception.NeoException;
 import neo.task.Deadline;
 import neo.task.Event;

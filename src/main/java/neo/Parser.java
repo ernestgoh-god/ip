@@ -20,7 +20,7 @@ public class Parser {
     public static final String EVENT_PREFIX = "event ";
     public static final String DELETE_PREFIX = "delete ";
     public static final String FIND_PREFIX = "find ";
-    
+
     private static final String DEADLINE_DELIMITER = " /by ";
     private static final String EVENT_FROM_DELIMITER = " /from ";
     private static final String EVENT_TO_DELIMITER = " /to ";
@@ -34,11 +34,11 @@ public class Parser {
      * @return The zero-based index of the target task.
      * @throws NeoException If the index is missing, not a valid number, or out of bounds.
      */
-    public static int parseIndex(String userInput, String commandPrefix, int listSize) 
+    public static int parseIndex(String userInput, String commandPrefix, int listSize)
             throws NeoException {
         String indexString = userInput.substring(commandPrefix.length()).trim();
         if (indexString.isEmpty()) {
-            throw new NeoException("The task index is missing. Try typing: " 
+            throw new NeoException("The task index is missing. Try typing: "
                     + commandPrefix.trim() + " <index>.");
         }
 
@@ -83,13 +83,13 @@ public class Parser {
             throw new NeoException("The deadline description is missing. "
                     + "Try typing: " + DEADLINE_PREFIX.trim() + " <description> /by <date>");
         }
-        
+
         String[] parts = payload.split(DEADLINE_DELIMITER);
         if (parts.length < 2) {
             throw new NeoException("The deadline date is missing. "
                     + "Try typing: " + DEADLINE_PREFIX.trim() + " <description> /by <date>");
         }
-        
+
         return new Deadline(parts[0], parts[1]);
     }
 
@@ -104,24 +104,24 @@ public class Parser {
         String payload = userInput.substring(EVENT_PREFIX.length()).trim();
         if (payload.isEmpty()) {
             throw new NeoException("The event description is missing. "
-                    + "Try typing: " + EVENT_PREFIX.trim() 
+                    + "Try typing: " + EVENT_PREFIX.trim()
                     + " <description> /from <start date> /to <end date>");
         }
-        
+
         String[] fromSplit = payload.split(EVENT_FROM_DELIMITER);
         if (fromSplit.length < 2) {
             throw new NeoException("The event start date is missing. "
-                    + "Try typing: " + EVENT_PREFIX.trim() 
+                    + "Try typing: " + EVENT_PREFIX.trim()
                     + " <description> /from <start date> /to <end date>");
         }
-        
+
         String[] toSplit = fromSplit[1].split(EVENT_TO_DELIMITER);
         if (toSplit.length < 2) {
             throw new NeoException("The event end date is missing. "
-                    + "Try typing: " + EVENT_PREFIX.trim() 
+                    + "Try typing: " + EVENT_PREFIX.trim()
                     + " <description> /from <start date> /to <end date>");
         }
-        
+
         return new Event(fromSplit[0], toSplit[0], toSplit[1]);
     }
 

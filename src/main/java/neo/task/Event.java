@@ -7,7 +7,7 @@ package neo.task;
 public class Event extends Task {
     /** The start date and time of the event. */
     private String from;
-    
+
     /** The end date and time of the event. */
     private String to;
 

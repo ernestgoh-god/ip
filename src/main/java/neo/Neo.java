@@ -1,7 +1,6 @@
 package neo;
 
 import java.util.ArrayList;
-
 import neo.exception.NeoException;
 import neo.task.Task;
 
@@ -90,7 +89,7 @@ public class Neo {
         if (command.startsWith(Parser.DELETE_PREFIX)) {
             int index = Parser.parseIndex(command, Parser.DELETE_PREFIX, tasks.getSize());
             Task t = tasks.deleteTask(index);
-            ui.showMessage("Noted. I've removed this task:\n       " + t 
+            ui.showMessage("Noted. I've removed this task:\n       " + t
                     + "\n     Now you have " + tasks.getSize() + " tasks in the list.");
             storage.save(tasks.getTasks());
             return false;
@@ -104,35 +103,35 @@ public class Neo {
         }
 
         if (command.startsWith(Parser.TODO_PREFIX)) {
-            Task t = Parser.parseTodo(command);
-            tasks.addTask(t);
-            ui.showMessage("Got it. I've added this task:\n       " + t 
-                    + "\n     Now you have " + tasks.getSize() + " tasks in the list.");
-            storage.save(tasks.getTasks());
+            addTask(Parser.parseTodo(command));
             return false;
         }
 
         if (command.startsWith(Parser.DEADLINE_PREFIX)) {
-            Task t = Parser.parseDeadline(command);
-            tasks.addTask(t);
-            ui.showMessage("Got it. I've added this task:\n       " + t 
-                    + "\n     Now you have " + tasks.getSize() + " tasks in the list.");
-            storage.save(tasks.getTasks());
+            addTask(Parser.parseDeadline(command));
             return false;
         }
 
         if (command.startsWith(Parser.EVENT_PREFIX)) {
-            Task t = Parser.parseEvent(command);
-            tasks.addTask(t);
-            ui.showMessage("Got it. I've added this task:\n       " + t 
-                    + "\n     Now you have " + tasks.getSize() + " tasks in the list.");
-            storage.save(tasks.getTasks());
+            addTask(Parser.parseEvent(command));
             return false;
         }
 
         throw new NeoException("Unrecognized command. Try typing: todo <description>, "
                 + "deadline <description> <date>, event <description> <date>, list, "
                 + "mark <index>, unmark <index>, delete <index>, find <keyword> or bye.");
+    }
+
+    /**
+     * Adds a task, displays the confirmation, and saves the updated task list.
+     *
+     * @param task The parsed task to add.
+     */
+    private void addTask(Task task) {
+        tasks.addTask(task);
+        ui.showMessage("Got it. I've added this task:\n       " + task
+                + "\n     Now you have " + tasks.getSize() + " tasks in the list.");
+        storage.save(tasks.getTasks());
     }
 
     /**

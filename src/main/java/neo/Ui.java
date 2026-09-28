@@ -38,7 +38,7 @@ public class Ui {
         System.out.println(SEPARATOR);
         System.out.println();
     }
-    
+
     /**
      * Displays the farewell message when the user exits the application.
      */
@@ -125,11 +125,11 @@ public class Ui {
             System.out.println("     No matching tasks found.");
             System.out.println();
             return;
-        } else  {
-            System.out.println("     Here are the matching tasks in your list:");
-            for (int i = 0; i < matchingTasks.size(); i++) {
-                System.out.println("     " + (i + 1) + "." + matchingTasks.get(i).toString());
-            }
+        }
+
+        System.out.println("     Here are the matching tasks in your list:");
+        for (int i = 0; i < matchingTasks.size(); i++) {
+            System.out.println("     " + (i + 1) + "." + matchingTasks.get(i).toString());
         }
         System.out.println(SEPARATOR);
         System.out.println();

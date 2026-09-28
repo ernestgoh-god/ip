@@ -6,7 +6,7 @@ package neo.exception;
  * application-specific errors occur.
  */
 public class NeoException extends Exception {
-    
+
     /**
      * Constructs a new NeoException with the specified detailed error message.
      *
