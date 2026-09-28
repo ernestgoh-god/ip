@@ -81,10 +81,10 @@ public class Ui {
     /**
      * Reads the next line of input provided by the user.
      *
-     * @return The full string command entered by the user.
+     * @return The full string command entered by the user, or {@code null} when input ends.
      */
     public String readCommand() {
-        return scanner.nextLine();
+        return scanner.hasNextLine() ? scanner.nextLine() : null;
     }
 
     /**

@@ -34,7 +34,7 @@ public class Neo {
     /**
      * Runs the main application loop.
      * Displays the welcome message and continuously reads and processes user
-     * commands until the exit command is given.
+     * commands until the exit command is given or the input stream ends.
      */
     public void run() {
         ui.showWelcome();
@@ -43,6 +43,10 @@ public class Neo {
         while (!isExit) {
             try {
                 String fullCommand = ui.readCommand();
+                if (fullCommand == null) {
+                    ui.showFarewell();
+                    break;
+                }
                 isExit = processCommand(fullCommand);
             } catch (NeoException e) {
                 ui.showError(e.getMessage());

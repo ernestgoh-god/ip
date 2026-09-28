@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Scanner;
 import neo.exception.NeoException;
 import neo.task.Deadline;
@@ -18,6 +20,8 @@ import neo.task.Todo;
  * the stored text back into recognizable Task objects.
  */
 public class Storage {
+    private static final String ENCODED_RECORD_PREFIX = "V2 | ";
+
     private String filePath;
 
     /**
@@ -32,7 +36,8 @@ public class Storage {
     /**
      * Loads the tasks from the storage file into an ArrayList.
      * Reads the file line by line, identifies the task type (Todo, Deadline, Event),
-     * and reconstructs the objects. Corrupted lines are skipped automatically.
+     * and reconstructs the objects. Supports legacy plain-text and V2 encoded records.
+     * Corrupted lines are skipped automatically.
      *
      * @return An {@code ArrayList<Task>} containing the tasks parsed from the file.
      * @throws NeoException If the data file does not exist at the specified path.
@@ -46,37 +51,14 @@ public class Storage {
 
         try (Scanner fileScanner = new Scanner(file)) {
             while (fileScanner.hasNextLine()) {
-                String line = fileScanner.nextLine().trim();
-                if (line.isEmpty()) {
+                String line = fileScanner.nextLine();
+                if (line.isBlank()) {
                     continue;
                 }
 
                 try {
-                    String type = line.substring(0, 1);
-                    Task task = null;
-                    boolean isDone = false;
-
-                    if (type.equals("T")) {
-                        String[] parts = line.split(" \\| ", 3);
-                        task = new Todo(parts[2]);
-                        isDone = parts[1].equals("1");
-                    } else if (type.equals("D")) {
-                        String[] parts = line.split(" \\| ", 4);
-                        task = new Deadline(parts[2], parts[3]);
-                        isDone = parts[1].equals("1");
-                    } else if (type.equals("E")) {
-                        String[] parts = line.split(" \\| ", 5);
-                        task = new Event(parts[2], parts[3], parts[4]);
-                        isDone = parts[1].equals("1");
-                    }
-
-                    if (task != null) {
-                        if (isDone) {
-                            task.markAsDone();
-                        }
-                        loadedTasks.add(task);
-                    }
-                } catch (Exception e) {
+                    loadedTasks.add(parseTask(line));
+                } catch (IllegalArgumentException e) {
                     System.out.println("Skipping corrupted data line: " + line);
                 }
             }
@@ -87,9 +69,51 @@ public class Storage {
     }
 
     /**
+     * Reconstructs one task, decoding text only when its record has the V2 marker.
+     *
+     * @param line The complete stored record.
+     * @return The task with its stored completion state.
+     * @throws IllegalArgumentException If the record type, fields, or encoding is invalid.
+     */
+    private Task parseTask(String line) {
+        boolean isEncoded = line.startsWith(ENCODED_RECORD_PREFIX);
+        String record = isEncoded ? line.substring(ENCODED_RECORD_PREFIX.length()) : line.trim();
+        String type = record.split(" \\| ", 2)[0];
+        int fieldCount = switch (type) {
+        case "T" -> 3;
+        case "D" -> 4;
+        case "E" -> 5;
+        default -> throw new IllegalArgumentException("Unknown task type.");
+        };
+
+        // Legacy records allow separators inside the last field. V2 preserves empty fields.
+        String[] parts = record.split(" \\| ", isEncoded ? -1 : fieldCount);
+        if (parts.length != fieldCount || (!parts[1].equals("0") && !parts[1].equals("1"))) {
+            throw new IllegalArgumentException("Invalid task fields.");
+        }
+        if (isEncoded) {
+            for (int i = 2; i < parts.length; i++) {
+                parts[i] = new String(Base64.getDecoder().decode(parts[i]), StandardCharsets.UTF_8);
+            }
+        }
+
+        Task task = switch (type) {
+        case "T" -> new Todo(parts[2]);
+        case "D" -> new Deadline(parts[2], parts[3]);
+        case "E" -> new Event(parts[2], parts[3], parts[4]);
+        default -> throw new IllegalArgumentException("Unknown task type.");
+        };
+        if (parts[1].equals("1")) {
+            task.markAsDone();
+        }
+        return task;
+    }
+
+    /**
      * Saves the provided list of tasks to the storage file.
      * Overwrites the existing file content with the string representations of the
-     * tasks. Automatically creates the parent directories if they are missing.
+     * tasks using V2 records with Base64-encoded text fields. Automatically creates
+     * the parent directories if they are missing.
      *
      * @param tasks The {@code ArrayList<Task>} containing the current tasks to save.
      */
@@ -99,7 +123,7 @@ public class Storage {
             file.getParentFile().mkdirs();
             FileWriter writer = new FileWriter(file);
             for (int i = 0; i < tasks.size(); i++) {
-                writer.write(tasks.get(i).toSaveFormat() + System.lineSeparator());
+                writer.write(ENCODED_RECORD_PREFIX + tasks.get(i).toSaveFormat() + System.lineSeparator());
             }
             writer.close();
         } catch (IOException e) {

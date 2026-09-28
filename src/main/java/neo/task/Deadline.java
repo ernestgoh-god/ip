@@ -32,10 +32,10 @@ public class Deadline extends Task {
     /**
      * Returns a string representation of this deadline task for saving to a persistent file.
      *
-     * @return A formatted string separated by pipes for storage parsing.
+     * @return A pipe-separated record with Base64-encoded text fields.
      */
     @Override
     public String toSaveFormat() {
-        return "D | " + super.toSaveFormat() + " | " + by;
+        return "D | " + super.toSaveFormat() + " | " + encodeForStorage(by);
     }
 }

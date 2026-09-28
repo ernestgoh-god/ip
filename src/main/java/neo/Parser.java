@@ -101,28 +101,33 @@ public class Parser {
      * @throws NeoException If the description, start date, or end date is missing or malformed.
      */
     public static Event parseEvent(String userInput) throws NeoException {
-        String payload = userInput.substring(EVENT_PREFIX.length()).trim();
-        if (payload.isEmpty()) {
+        String payload = userInput.substring(EVENT_PREFIX.length());
+        if (payload.isBlank() || payload.stripLeading().startsWith(EVENT_FROM_DELIMITER.stripLeading())) {
             throw new NeoException("The event description is missing. "
                     + "Try typing: " + EVENT_PREFIX.trim()
                     + " <description> /from <start date> /to <end date>");
         }
 
-        String[] fromSplit = payload.split(EVENT_FROM_DELIMITER);
+        String[] fromSplit = payload.split(EVENT_FROM_DELIMITER, 2);
         if (fromSplit.length < 2) {
             throw new NeoException("The event start date is missing. "
                     + "Try typing: " + EVENT_PREFIX.trim()
                     + " <description> /from <start date> /to <end date>");
         }
 
-        String[] toSplit = fromSplit[1].split(EVENT_TO_DELIMITER);
-        if (toSplit.length < 2) {
+        String[] toSplit = fromSplit[1].split(EVENT_TO_DELIMITER, 2);
+        if (toSplit[0].isBlank()) {
+            throw new NeoException("The event start date is missing. "
+                    + "Try typing: " + EVENT_PREFIX.trim()
+                    + " <description> /from <start date> /to <end date>");
+        }
+        if (toSplit.length < 2 || toSplit[1].isBlank()) {
             throw new NeoException("The event end date is missing. "
                     + "Try typing: " + EVENT_PREFIX.trim()
                     + " <description> /from <start date> /to <end date>");
         }
 
-        return new Event(fromSplit[0], toSplit[0], toSplit[1]);
+        return new Event(fromSplit[0].trim(), toSplit[0].trim(), toSplit[1].trim());
     }
 
     /**
