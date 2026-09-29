@@ -81,3 +81,21 @@ Removes a task permanently from your list.
 Saves your tasks and exits Neo.
 
 - **Format:** `bye`
+
+## Editing saved tasks
+
+Tasks are saved in `data/neo.txt` as readable UTF-8 text. Close Neo before editing
+the file, then restart it to load your changes. For example:
+
+```text
+T | 0 | read book
+D | 0 | return book | June 6th
+E | 1 | meet friends | 10 am | 9 pm
+```
+
+Keep the `|` separators. `T`, `D`, and `E` mean todo,
+deadline, and event; `0` means incomplete and `1` means complete. Edit the task
+description and dates directly. Within a field, write `\|` for a literal pipe,
+`\\` for a backslash, `\n` for a line break, and `\r` for a carriage return.
+
+Each task addition, deletion, or completion change saves the entire list in this format.

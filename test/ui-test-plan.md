@@ -19,12 +19,13 @@ java -cp out neo.StorageTest
 These checks use temporary files under `out`. They verify that descriptions,
 deadlines, and event times containing pipes survive saving and loading, along
 with completion states, Unicode, backslashes, line breaks, and empty fields.
-They also check migration of legacy records, mixed old/new records, and skipping
-malformed V2 records while keeping valid tasks. Expect four corrupted-record
-notices followed by `PASS: 3 storage regression checks`.
+They also check loading readable records starting directly with the task type,
+manual edits to descriptions, completion states, and dates, and skipping
+malformed records while keeping valid tasks. Expect seven corrupted-record
+notices followed by `PASS: 4 storage regression checks`.
 
-Latest storage regression result (2026-09-28, Java 25.0.3): **PASS**, all three
-checks completed with the four expected corrupted-record notices.
+Latest storage regression result (2026-09-29, Java 25.0.3): **PASS**, all four
+checks completed with the seven expected corrupted-record notices.
 
 Task-addition confirmations use seven leading spaces before the task details,
 as confirmed by the intended UI format. Events display one time range, such as
@@ -265,7 +266,6 @@ bye
     ____________________________________________________________
 ```
 
-
 ## Test case: Reject blank event fields and trim valid fields
 
 ### Aim
@@ -279,10 +279,10 @@ in the inputs, including the trailing spaces after /to.
 ```text
 event meeting /from  /to 11am
 event meeting /from     /to 11am
-event meeting /from 9am /to    
+event meeting /from 9am /to
 event /from 9am /to 11am
 list
-event   planning   /from   9am   /to   10am  
+event   planning   /from   9am   /to   10am
 list
 bye
 ```
@@ -452,7 +452,7 @@ unknown
 
 ## Latest test session
 
-Run started: 2026-09-28T22:02:47+08:00
+Run started: 2026-09-29T10:53:06+08:00
 
 ### Exit the application
 
@@ -679,10 +679,10 @@ in the inputs, including the trailing spaces after /to.
 ```text
 event meeting /from  /to 11am
 event meeting /from     /to 11am
-event meeting /from 9am /to    
+event meeting /from 9am /to
 event /from 9am /to 11am
 list
-event   planning   /from   9am   /to   10am  
+event   planning   /from   9am   /to   10am
 list
 bye
 ```

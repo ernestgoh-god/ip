@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Scanner;
 import neo.exception.NeoException;
 import neo.task.Deadline;
@@ -20,8 +18,6 @@ import neo.task.Todo;
  * the stored text back into recognizable Task objects.
  */
 public class Storage {
-    private static final String ENCODED_RECORD_PREFIX = "V2 | ";
-
     private String filePath;
 
     /**
@@ -36,7 +32,7 @@ public class Storage {
     /**
      * Loads the tasks from the storage file into an ArrayList.
      * Reads the file line by line, identifies the task type (Todo, Deadline, Event),
-     * and reconstructs the objects. Supports legacy plain-text and V2 encoded records.
+     * and reconstructs the objects from readable, pipe-separated records.
      * Corrupted lines are skipped automatically.
      *
      * @return An {@code ArrayList<Task>} containing the tasks parsed from the file.
@@ -69,16 +65,14 @@ public class Storage {
     }
 
     /**
-     * Reconstructs one task, decoding text only when its record has the V2 marker.
+     * Reconstructs one task from a readable, pipe-separated record.
      *
      * @param line The complete stored record.
      * @return The task with its stored completion state.
-     * @throws IllegalArgumentException If the record type, fields, or encoding is invalid.
+     * @throws IllegalArgumentException If the record type, fields, or escape sequences are invalid.
      */
     private Task parseTask(String line) {
-        boolean isEncoded = line.startsWith(ENCODED_RECORD_PREFIX);
-        String record = isEncoded ? line.substring(ENCODED_RECORD_PREFIX.length()) : line.trim();
-        String type = record.split(" \\| ", 2)[0];
+        String type = line.split(" \\| ", 2)[0];
         int fieldCount = switch (type) {
         case "T" -> 3;
         case "D" -> 4;
@@ -86,15 +80,13 @@ public class Storage {
         default -> throw new IllegalArgumentException("Unknown task type.");
         };
 
-        // Legacy records allow separators inside the last field. V2 preserves empty fields.
-        String[] parts = record.split(" \\| ", isEncoded ? -1 : fieldCount);
+        // Allow literal separators inside the last field and preserve empty fields.
+        String[] parts = line.split(" \\| ", fieldCount);
         if (parts.length != fieldCount || (!parts[1].equals("0") && !parts[1].equals("1"))) {
             throw new IllegalArgumentException("Invalid task fields.");
         }
-        if (isEncoded) {
-            for (int i = 2; i < parts.length; i++) {
-                parts[i] = new String(Base64.getDecoder().decode(parts[i]), StandardCharsets.UTF_8);
-            }
+        for (int i = 2; i < parts.length; i++) {
+            parts[i] = unescapeField(parts[i]);
         }
 
         Task task = switch (type) {
@@ -109,10 +101,34 @@ public class Storage {
         return task;
     }
 
+    /** Restores escaped characters in a readable field, rejecting incomplete or unknown escapes. */
+    private String unescapeField(String text) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char character = text.charAt(i);
+            if (character != '\\') {
+                result.append(character);
+                continue;
+            }
+            i++;
+            if (i == text.length()) {
+                throw new IllegalArgumentException("Incomplete escape sequence.");
+            }
+            result.append(switch (text.charAt(i)) {
+            case '\\' -> '\\';
+            case '|' -> '|';
+            case 'n' -> '\n';
+            case 'r' -> '\r';
+            default -> throw new IllegalArgumentException("Unknown escape sequence.");
+            });
+        }
+        return result.toString();
+    }
+
     /**
      * Saves the provided list of tasks to the storage file.
      * Overwrites the existing file content with the string representations of the
-     * tasks using V2 records with Base64-encoded text fields. Automatically creates
+     * tasks using pipe-separated records with escaped, readable text fields. Automatically creates
      * the parent directories if they are missing.
      *
      * @param tasks The {@code ArrayList<Task>} containing the current tasks to save.
@@ -123,7 +139,7 @@ public class Storage {
             file.getParentFile().mkdirs();
             FileWriter writer = new FileWriter(file);
             for (int i = 0; i < tasks.size(); i++) {
-                writer.write(ENCODED_RECORD_PREFIX + tasks.get(i).toSaveFormat() + System.lineSeparator());
+                writer.write(tasks.get(i).toSaveFormat() + System.lineSeparator());
             }
             writer.close();
         } catch (IOException e) {

@@ -37,11 +37,11 @@ public class Event extends Task {
     /**
      * Returns a string representation of this event task for saving to a persistent file.
      *
-     * @return A pipe-separated record with Base64-encoded text fields.
+     * @return A pipe-separated record with escaped, readable text fields.
      */
     @Override
     public String toSaveFormat() {
-        return "E | " + super.toSaveFormat() + " | " + encodeForStorage(from)
-                + " | " + encodeForStorage(to);
+        return "E | " + super.toSaveFormat() + " | " + escapeForStorage(from)
+                + " | " + escapeForStorage(to);
     }
 }

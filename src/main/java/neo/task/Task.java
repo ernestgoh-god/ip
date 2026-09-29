@@ -1,8 +1,5 @@
 package neo.task;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
 /** Represents a task in Neo's task list. */
 public class Task {
     /** The text that describes this task. */
@@ -52,20 +49,21 @@ public class Task {
     }
 
     /**
-     * Returns the completion state and Base64-encoded description for storage.
-     * Subclasses prepend their task type; Storage adds the format version.
+     * Returns the completion state and escaped, readable description for storage.
+     * Subclasses prepend their task type.
      */
     public String toSaveFormat() {
-        return (isDone ? "1" : "0") + " | " + encodeForStorage(description);
+        return (isDone ? "1" : "0") + " | " + escapeForStorage(description);
     }
 
     /**
-     * Encodes text so pipes and line breaks cannot be mistaken for storage separators.
+     * Escapes special characters while keeping ordinary text human-readable.
      *
      * @param text The original field value.
-     * @return The Base64 representation of the field's UTF-8 bytes.
+     * @return The text with backslashes, pipes, and line breaks escaped.
      */
-    protected static String encodeForStorage(String text) {
-        return Base64.getEncoder().encodeToString(text.getBytes(StandardCharsets.UTF_8));
+    protected static String escapeForStorage(String text) {
+        return text.replace("\\", "\\\\").replace("|", "\\|")
+                .replace("\n", "\\n").replace("\r", "\\r");
     }
 }

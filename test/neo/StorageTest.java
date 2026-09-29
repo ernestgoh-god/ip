@@ -10,7 +10,7 @@ import neo.task.Event;
 import neo.task.Task;
 import neo.task.Todo;
 
-/** Checks storage round trips and migration using an isolated temporary file. */
+/** Checks storage round trips and manual edits using an isolated temporary file. */
 public class StorageTest {
     /**
      * Runs the storage checks and removes their temporary data afterward.
@@ -22,10 +22,11 @@ public class StorageTest {
         Path directory = Files.createTempDirectory(Path.of("out"), "neo-storage-");
         Path file = directory.resolve("neo.txt");
         try {
-            checkEncodedRoundTrip(file);
-            checkLegacyMigration(file);
+            checkReadableRoundTrip(file);
+            checkReadableInput(file);
+            checkManualEdits(file);
             checkCorruptedRecords(file);
-            System.out.println("PASS: 3 storage regression checks");
+            System.out.println("PASS: 4 storage regression checks");
         } finally {
             Files.deleteIfExists(file);
             Files.delete(directory);
@@ -33,7 +34,7 @@ public class StorageTest {
     }
 
     /** Checks all text fields and completion states after loading through a new Storage instance. */
-    private static void checkEncodedRoundTrip(Path file) throws Exception {
+    private static void checkReadableRoundTrip(Path file) throws Exception {
         ArrayList<Task> tasks = new ArrayList<>();
         tasks.add(new Todo("read A | B \\ notes\nnext line: café 雪"));
         tasks.add(new Deadline("compare A | B", "Friday | Saturday"));
@@ -41,44 +42,75 @@ public class StorageTest {
         tasks.add(new Todo(""));
         tasks.add(new Deadline("empty deadline", ""));
         tasks.add(new Event("empty times", "", ""));
+        tasks.add(new Todo("  literal \\n and \\r, carriage\rreturn, trailing slash\\"));
+        tasks.add(new Todo("trailing spaces  "));
         tasks.get(0).markAsDone();
         tasks.get(1).markAsDone();
         tasks.get(2).markAsDone();
 
         new Storage(file.toString()).save(tasks);
-        checkVersionedRecords(file, tasks.size());
+        checkReadableRecords(file, tasks.size());
         checkTasks(tasks, new Storage(file.toString()).load());
     }
 
-    /** Checks that plain text stays literal and old and new records can coexist during migration. */
-    private static void checkLegacyMigration(Path file) throws Exception {
-        String legacyData = "T | 1 | TWFu | literal text\n"
+    /** Checks plain records with literal separators in the last field and escaped pipes elsewhere. */
+    private static void checkReadableInput(Path file) throws Exception {
+        String readableData = "T | 1 | read | literal text\n"
                 + "D | 0 | submit report | Friday | evening\n"
                 + "E | 1 | team sync | 10am | 11am\n"
-                + "V2 | T | 0 | bmV3\n";
-        Files.writeString(file, legacyData, StandardCharsets.UTF_8);
+                + "D | 0 | read A \\| B | Friday\n"
+                + "E | 0 | meet A \\| B | 9am \\| 10am | noon\n";
+        Files.writeString(file, readableData, StandardCharsets.UTF_8);
         ArrayList<Task> expected = new ArrayList<>();
-        expected.add(new Todo("TWFu | literal text"));
+        expected.add(new Todo("read | literal text"));
         expected.add(new Deadline("submit report", "Friday | evening"));
         expected.add(new Event("team sync", "10am", "11am"));
-        expected.add(new Todo("new"));
+        expected.add(new Deadline("read A | B", "Friday"));
+        expected.add(new Event("meet A | B", "9am | 10am", "noon"));
         expected.get(0).markAsDone();
         expected.get(2).markAsDone();
 
         ArrayList<Task> loadedTasks = new Storage(file.toString()).load();
         checkTasks(expected, loadedTasks);
         new Storage(file.toString()).save(loadedTasks);
-        checkVersionedRecords(file, expected.size());
+        checkReadableRecords(file, expected.size());
         checkTasks(expected, new Storage(file.toString()).load());
     }
 
-    /** Checks that malformed V2 records are skipped without discarding valid following tasks. */
+    /** Checks readable output and simulates a user editing descriptions, status, and dates. */
+    private static void checkManualEdits(Path file) throws Exception {
+        ArrayList<Task> tasks = new ArrayList<>();
+        tasks.add(new Todo("read book"));
+        tasks.add(new Deadline("return book", "June 6th"));
+        tasks.add(new Event("meet friends", "10 am", "9 pm"));
+        new Storage(file.toString()).save(tasks);
+        List<String> expectedLines = List.of("T | 0 | read book",
+                "D | 0 | return book | June 6th", "E | 0 | meet friends | 10 am | 9 pm");
+        if (!Files.readAllLines(file, StandardCharsets.UTF_8).equals(expectedLines)) {
+            throw new AssertionError("Saved fields are not human-readable.");
+        }
+
+        String editedData = Files.readString(file, StandardCharsets.UTF_8)
+                .replace("T | 0 | read book", "T | 1 | read newspaper")
+                .replace("June 6th", "June 7th").replace("10 am", "11 am");
+        Files.writeString(file, editedData, StandardCharsets.UTF_8);
+        tasks.set(0, new Todo("read newspaper"));
+        tasks.get(0).markAsDone();
+        tasks.set(1, new Deadline("return book", "June 7th"));
+        tasks.set(2, new Event("meet friends", "11 am", "9 pm"));
+        checkTasks(tasks, new Storage(file.toString()).load());
+    }
+
+    /** Checks that malformed records are skipped without discarding valid following tasks. */
     private static void checkCorruptedRecords(Path file) throws Exception {
-        String corruptedData = "V2 | D | 0 | ZGVzYw==\n"
-                + "V2 | T | 0 | %%%\n"
-                + "V2 | T | 2 | bmV3\n"
-                + "V2 | T | 0 | bmV3 | extra\n"
-                + "V2 | T | 1 | c2FmZQ==\n";
+        String corruptedData = "D | 0 | missing deadline\n"
+                + "T | 0\n"
+                + "T | 2 | invalid status\n"
+                + "Z | 0 | unknown type\n"
+                + "T | 0 | bad\\q\n"
+                + "T | 0 | bad\\\n"
+                + "E | 0 | missing times\n"
+                + "T | 1 | safe\n";
         Files.writeString(file, corruptedData, StandardCharsets.UTF_8);
         ArrayList<Task> expected = new ArrayList<>();
         expected.add(new Todo("safe"));
@@ -103,15 +135,15 @@ public class StorageTest {
         }
     }
 
-    /** Checks that every task occupies exactly one versioned line, even if its text contains newlines. */
-    private static void checkVersionedRecords(Path file, int taskCount) throws Exception {
+    /** Checks that every task occupies one line starting directly with its task type. */
+    private static void checkReadableRecords(Path file, int taskCount) throws Exception {
         List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
         if (lines.size() != taskCount) {
             throw new AssertionError("Expected one storage line per task.");
         }
         for (String line : lines) {
-            if (!line.startsWith("V2 | ")) {
-                throw new AssertionError("Saved task is missing its format version.");
+            if (!line.matches("[TDE] \\| [01] \\| .*")) {
+                throw new AssertionError("Saved task does not start with its type and completion state.");
             }
         }
     }
